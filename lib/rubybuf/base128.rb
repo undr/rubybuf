@@ -18,8 +18,9 @@ module Rubybuf
       bytes = str.unpack('C*')
       value = 0
       bytes.each_with_index do |byte, index|
-        byte &= ~(1 << 7) if byte > 128 
+        byte &= ~(1 << 7) if byte >= 128 
         value |= byte << (7 * index)
+        p "index = #{index}, byte = #{byte}, value = #{value.to_s(2)}"
       end
       value
 

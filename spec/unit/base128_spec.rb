@@ -45,11 +45,26 @@ describe Rubybuf::Base128 do
       end
     end
   end
-  context "when encode and decode" do
+  context "when encode and decode values less than 128" do
     before :all do
       @numbers = []
-      10.times do
+      50.times do
         @numbers << rand(128)
+      end
+    end
+    
+    it "returns original value" do
+      @numbers.each do |num|
+        Rubybuf::Base128.decode(Rubybuf::Base128.encode(num)).should == num
+      end
+    end
+  end
+  context "when encode and decode values more than 128" do
+    before :all do
+      @numbers = []
+      max = 2**32 - 128
+      50.times do
+        @numbers << rand(max) + 128
       end
     end
     
