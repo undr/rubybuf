@@ -12,3 +12,4 @@ require "active_support/time_with_zone"
 require "will_paginate/collection"
 
 require "rubybuf/base128"
+require "rubybuf/zig_zag"
