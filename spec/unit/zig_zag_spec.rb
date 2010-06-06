@@ -6,7 +6,7 @@ describe Rubybuf::ZigZag do
     context "when encode not integer value" do
 
       it "raises exception ArgumentError" do
-        lambda { Rubybuf::ZigZag.zigzag_encode("x") }.should raise_error(::ArgumentError, "value mast by type of Integer")
+        lambda { Rubybuf::ZigZag.zigzag_encode("x") }.should raise_error(::ArgumentError, "value must by type of Integer")
       end
     end
     context "when encode positive value" do
@@ -27,7 +27,7 @@ describe Rubybuf::ZigZag do
     context "when encode not integer value" do
 
       it "raises exception ArgumentError" do
-        lambda { Rubybuf::ZigZag.zigzag_decode("x") }.should raise_error(::ArgumentError, "value mast by type of Integer")
+        lambda { Rubybuf::ZigZag.zigzag_decode("x") }.should raise_error(::ArgumentError, "value must by type of Integer")
       end
     end
     context "when decode positive value" do

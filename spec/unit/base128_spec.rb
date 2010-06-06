@@ -19,7 +19,7 @@ describe Rubybuf::Base128 do
     context "when encode not integer value" do
 
       it "raises exception ArgumentError" do
-        lambda { Rubybuf::Base128.base128_encode("x") }.should raise_error(::ArgumentError, "value mast by type of Integer")
+        lambda { Rubybuf::Base128.base128_encode("x") }.should raise_error(::ArgumentError, "value must by type of Integer")
       end
     end
     context "when encode value les than 0" do
@@ -29,19 +29,47 @@ describe Rubybuf::Base128 do
       end
     end
   end
-  
+  describe ".base128_encode_to_stream" do
+    context "when encode value less than 128" do
+      it "returns filled StringIO with value.chr string" do
+        writer = StringIO.new
+        Rubybuf::Base128.base128_encode_to(writer, 120)
+        writer.pos = 0
+        writer.should be_a(StringIO)
+        writer.read.should == "x"
+      end
+    end
+  end
+  describe ".base128_encode_to_stream" do
+    context "when encode value more than 128, for exemple, 300" do
+      before :all do
+        @writer = StringIO.new
+        Rubybuf::Base128.base128_encode_to(@writer, 300)
+        @writer.pos = 0
+      end
+      it "returns StringIO" do
+        @writer.should be_a(StringIO)
+      end
+      it "returns StringIO with length 2" do
+        @writer.length.should == 2
+      end
+      it "returns StringIO with right text" do
+        @writer.read.should == "\254\002"
+      end
+    end
+  end
   describe ".base128_decode" do
 
     context "when decode one symbol" do
 
       it "returns value more than 0 and less than 128" do
-        Rubybuf::Base128.base128_decode("x").should == 120
+        Rubybuf::Base128.base128_decode_from(StringIO.new("x")).should == 120
       end
     end
     context "when decode a few symbols" do
 
       it "returns value more than 128" do
-        Rubybuf::Base128.base128_decode("\254\002").should == 300
+        Rubybuf::Base128.base128_decode_from(StringIO.new("\254\002")).should == 300
       end
     end
   end
@@ -55,7 +83,7 @@ describe Rubybuf::Base128 do
     
     it "returns original value" do
       @numbers.each do |num|
-        Rubybuf::Base128.base128_decode(Rubybuf::Base128.base128_encode(num)).should == num
+        Rubybuf::Base128.base128_decode_from(StringIO.new(Rubybuf::Base128.base128_encode(num))).should == num
       end
     end
   end
@@ -70,7 +98,7 @@ describe Rubybuf::Base128 do
     
     it "returns original value" do
       @numbers.each do |num|
-        Rubybuf::Base128.base128_decode(Rubybuf::Base128.base128_encode(num)).should == num
+        Rubybuf::Base128.base128_decode_from(StringIO.new(Rubybuf::Base128.base128_encode(num))).should == num
       end
     end
   end

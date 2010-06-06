@@ -13,3 +13,7 @@ require "will_paginate/collection"
 
 require "rubybuf/base128"
 require "rubybuf/zig_zag"
+require "rubybuf/wire_type/varint"
+require "rubybuf/wire_type/length_delimited"
+require "rubybuf/message/field"
+require "rubybuf/message/base"
