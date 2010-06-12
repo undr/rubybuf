@@ -1,7 +1,7 @@
 module Rubybuf
   module Message
     module Field
-      TYPES = [:int, :string, :uint, :bool, :enum, :bytes].freeze
+      TYPES = [:int, :sint, :string, :uint, :bool, :enum, :bytes].freeze
       
       WIRETYPE_VARINT = 0;
       WIRETYPE_FIXED64 = 1;
@@ -19,8 +19,12 @@ module Rubybuf
       class Base
         attr_reader :rule, :name 
         include Rubybuf::Base128
+        include Rubybuf::ZigZag
         def initialize(rule, name, tag, options)
-          @rule, @name, @tag, @options = rule, name, tag, options
+          @rule = rule
+          @name = name
+          @tag = tag
+          @options = options
         end
         
         def value=(value)
@@ -35,7 +39,7 @@ module Rubybuf
         end
 
         def valid_value_type?(value)
-          if rule == :repeated
+          if @rule == :repeated
             return false unless value.is_a?(Array)
             value.each do |item|
               return false unless valid_value_type_impl?(item)
@@ -46,7 +50,7 @@ module Rubybuf
         end
         
         def read(reader)
-          if rule == :repeated
+          if @rule == :repeated
             self.value << read_impl(reader)
           else
             self.value = read_impl(reader)
@@ -54,9 +58,10 @@ module Rubybuf
         end
         
         def write(writer)
-          return if rule = :optional && value_is_empty_or_nul?
-          if rule == :repeated
+          return if @rule == :optional && value_is_empty_or_nul?
+          if @rule == :repeated
             self.value.each do |item|
+              #p item.inspect
               write_header(writer)
               write_impl(writer, item)
             end
@@ -67,7 +72,7 @@ module Rubybuf
         end
         
         protected
-        def value_is_empty_or_nul?(value)
+        def value_is_empty_or_nul?
           return true if self.value.nil?
           self.value.empty? if self.value.respond_to?(:empty?)
         end
@@ -85,7 +90,7 @@ module Rubybuf
         end
         
         def write_header(writer)
-          header << @tag
+          header = @tag << 3
           header |= wire_type
           base128_encode_to(writer, header)
         end
@@ -104,6 +109,22 @@ module Rubybuf
         
         def read_impl(reader)
           read_wiretype_data(reader).to_i
+        end
+      end
+
+      class Sint < Base
+        include Rubybuf::WireType::Varint
+        protected
+        def valid_value_type_impl?(value)
+          value.is_a?(::Integer)
+        end
+        
+        def write_impl(writer, value)
+          write_wiretype_data(writer, zigzag_encode(value))
+        end
+        
+        def read_impl(reader)
+          zigzag_decode(read_wiretype_data(reader).to_i)
         end
       end
 

@@ -3,7 +3,7 @@ require "spec_helper"
 describe Rubybuf::Message::Field do
   it "contains array with field type names" do
     Rubybuf::Message::Field::TYPES.should be_a(Array)
-    Rubybuf::Message::Field::TYPES.should include(:int, :string, :uint, :bool, :enum, :bytes)
+    Rubybuf::Message::Field::TYPES.should include(:int, :sint, :string, :uint, :bool, :enum, :bytes)
   end
   context ".build" do
     Rubybuf::Message::Field::TYPES.each do |type|
