@@ -17,7 +17,7 @@ module Rubybuf
       end
       
       class Base
-        attr_reader :rule, :name 
+        attr_reader :rule, :name, :options
         include Rubybuf::Base128
         include Rubybuf::ZigZag
         def initialize(rule, name, tag, options)
@@ -25,17 +25,6 @@ module Rubybuf
           @name = name
           @tag = tag
           @options = options
-        end
-        
-        def value=(value)
-          raise ArgumentError, "value type is not valid" unless valid_value_type?(value)
-          @value = value
-        end
-        
-        def value
-          default = nil
-          default = [] if rule == :repeated
-          @value ||= default
         end
 
         def valid_value_type?(value)
@@ -49,166 +38,156 @@ module Rubybuf
           valid_value_type_impl?(value)
         end
         
-        def read(reader)
-          if @rule == :repeated
-            self.value << read_impl(reader)
-          else
-            self.value = read_impl(reader)
-          end
+        def read_from(reader)
+          raise NotImplementedError
         end
         
-        def write(writer)
-          return if @rule == :optional && value_is_empty_or_nul?
-          if @rule == :repeated
-            self.value.each do |item|
-              #p item.inspect
-              write_header(writer)
-              write_impl(writer, item)
-            end
-          else
-            write_header(writer)
-            write_impl(writer, self.value)
-          end
+        def write_to(writer)
+          raise NotImplementedError
         end
         
         protected
-        def value_is_empty_or_nul?
-          return true if self.value.nil?
-          self.value.empty? if self.value.respond_to?(:empty?)
-        end
-        
         def valid_value_type_impl?(value)
           raise NotImplementedError
-        end
-        
-        def write_impl(writer, value)
-          raise NotImplementedError
-        end
-        
-        def read_impl(reader)
-          raise NotImplementedError
-        end
-        
-        def write_header(writer)
-          header = @tag << 3
-          header |= wire_type
-          base128_encode_to(writer, header)
         end
       end
 
       class Int < Base
         include Rubybuf::WireType::Varint
-        protected
-        def valid_value_type_impl?(value)
-          value.is_a?(::Integer)
-        end
-        
-        def write_impl(writer, value)
+      
+        def write_to(writer, value)
           write_wiretype_data(writer, value)
         end
         
-        def read_impl(reader)
+        def read_from(reader)
           read_wiretype_data(reader).to_i
+        end
+        protected
+        def valid_value_type_impl?(value)
+          value.is_a?(::Integer)
         end
       end
 
       class Sint < Base
         include Rubybuf::WireType::Varint
-        protected
-        def valid_value_type_impl?(value)
-          value.is_a?(::Integer)
-        end
-        
-        def write_impl(writer, value)
+
+        def write_to(writer, value)
           write_wiretype_data(writer, zigzag_encode(value))
         end
         
-        def read_impl(reader)
+        def read_from(reader)
           zigzag_decode(read_wiretype_data(reader).to_i)
+        end
+        
+        protected
+        def valid_value_type_impl?(value)
+          value.is_a?(::Integer)
         end
       end
 
       class String < Base
         include Rubybuf::WireType::LengthDelimited
+
+        def write_to(writer, value)
+          write_wiretype_data(writer, value)
+        end
+        
+        def read_from(reader)
+          read_wiretype_data(reader).to_s
+        end
+        
         protected
         def valid_value_type_impl?(value)
           value.is_a?(::String)
-        end
-        
-        def write_impl(writer, value)
-          write_wiretype_data(writer, value.to_i)
-        end
-        
-        def read_impl(reader)
-          read_wiretype_data(reader).to_s
         end
       end
 
       class Uint < Base
         include Rubybuf::WireType::Varint
-        protected
-        def valid_value_type_impl?(value)
-          value.is_a?(::Integer) && value >= 0
-        end
         
-        def write_impl(writer, value)
+        def write_to(writer, value)
           write_wiretype_data(writer, value)
         end
         
-        def read_impl(reader)
+        def read_from(reader)
           read_wiretype_data(reader).to_i
+        end
+        
+        protected
+        def valid_value_type_impl?(value)
+          value.is_a?(::Integer) && value >= 0
         end
       end
 
       class Bool < Base
         include Rubybuf::WireType::Varint
+        
+        def write_to(writer, value)
+          write_wiretype_data(writer, bool_to_i(value))
+        end
+        
+        def read_from(reader)
+          i_to_bool(read_wiretype_data(reader))
+        end
+        
         protected
         def valid_value_type_impl?(value)
-          true
+          value.is_a?(::FalseClass) || value.is_a?(::TrueClass)
         end
         
-        def write_impl(writer, value)
-          write_wiretype_data(writer, value.to_i)
+        def bool_to_i(value)
+          if value.is_a?(::FalseClass)
+            0
+          else
+            1
+          end
         end
         
-        def read_impl(reader)
-          !!read_wiretype_data(reader)
+        def i_to_bool(value)
+          if value == 0
+            false
+          else
+            true
+          end
         end
       end
 
       class Enum < Base
         include Rubybuf::WireType::Varint
-        protected
-        def valid_value_type_impl?(value)
-          @options[:values].include?(value)
-        end
         
-        def write_impl(writer, value)
+        def write_to(writer, value)
           index = @options[:values].index(value)
           raise ::StandardError if index.nil?
           write_wiretype_data(writer, index) 
         end
         
-        def read_impl(reader)
+        def read_from(reader)
           index = read_wiretype_data(reader)
           raise ::StandardError unless @options[:values][index]
           @options[:values][index]
+        end
+        
+        protected
+        def valid_value_type_impl?(value)
+          @options[:values].include?(value)
         end
       end
 
       class Bytes < Base
         include Rubybuf::WireType::LengthDelimited
+        
+        def write_to(writer, value)
+          value.pos = 0
+          write_wiretype_data(writer, value.read)
+        end
+        
+        def read_from(reader)
+          StringIO.new(read_wiretype_data(reader).to_s)
+        end
+        
         protected
         def valid_value_type_impl?(value)
-          true
-        end
-        
-        def write_impl(writer, value)
-          write_wiretype_data(writer, value)
-        end
-        
-        def read_impl(reader)
-          read_wiretype_data(reader).to_s
+          value.is_a?(StringIO)
         end
       end
     end

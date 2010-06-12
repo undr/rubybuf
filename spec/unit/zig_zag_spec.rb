@@ -36,7 +36,7 @@ describe Rubybuf::ZigZag do
         Rubybuf::ZigZag.zigzag_decode(300).should == 150
       end
       it "returns negative value for odd integers" do
-        Rubybuf::ZigZag.zigzag_decode(301).should == -150
+        Rubybuf::ZigZag.zigzag_decode(299).should == -150
       end
     end
     context "when encode negative value" do

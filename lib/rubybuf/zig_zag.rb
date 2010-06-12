@@ -14,7 +14,7 @@ module Rubybuf
       raise ::ArgumentError, "value must by type of Integer" unless value.is_a?(Integer)
       raise ::RangeError, "#{value} is negative" if value < 0
       result = value / 2
-      result = -(result) if value.modulo(2) == 1
+      result = -(result + 1) if value.modulo(2) == 1
       result
     end
   end
