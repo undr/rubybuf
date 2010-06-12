@@ -41,5 +41,6 @@ module Rubybuf
       end
       value
     end
+    public :base128_decode_from, :base128_decode, :base128_encode_to, :base128_encode
   end
 end

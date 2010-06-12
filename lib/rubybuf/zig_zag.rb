@@ -17,5 +17,7 @@ module Rubybuf
       result = -(result + 1) if value.modulo(2) == 1
       result
     end
+    
+    public :zigzag_decode, :zigzag_encode
   end
 end

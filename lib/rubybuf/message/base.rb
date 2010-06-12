@@ -52,7 +52,7 @@ module Rubybuf
       end
       
       def write_to(writer)
-        self.class.fields.each do |field|
+        self.class.fields.each do |name, field|
           write_field_to(writer, field)
         end
       end
@@ -61,13 +61,13 @@ module Rubybuf
         while(true) do
           read_field_from(reader)
         end
-      rescue
+      rescue EOFError
       end
 
       protected
       def set_default_values
-        self.class.fields.keys.each do |field_name|
-          field = fields[field_name]
+        self.class.fields.each do |field_name, field|
+          #field = self.class.fields[field_name]
           @values[field_name] = if field.rule == :required
             nil
           elsif field.rule == :optional
@@ -82,12 +82,12 @@ module Rubybuf
         return if field.rule == :optional && value_is_empty_or_nul?(value)
         if field.rule == :repeated
           value.each do |item|
-            write_header_to(writer)
-            field.write(writer, item)
+            write_header_to(writer, field)
+            field.write_to(writer, item)
           end
         else
-          write_header_to(writer)
-          field.write(writer, value)
+          write_header_to(writer, field)
+          field.write_to(writer, value)
         end
       end
       
@@ -99,9 +99,9 @@ module Rubybuf
       def read_field_from(reader)
         field = read_header_from(reader)
         if field.rule == :repeated
-          get_value(field.name) << field.read(reader)
+          get_value(field.name) << field.read_from(reader)
         else
-          set_value(field.name, field.read(reader))
+          set_value(field.name, field.read_from(reader))
         end
       end
       
@@ -114,20 +114,20 @@ module Rubybuf
         @values[name] = value if self.class.field_exists?(name) && self.class.fields[name].valid_value_type?(value)
       end
       
-      def write_header_to(writer, name)
-        header = field_tags[name] << 3
-        header |= fields[name].wire_type
-        fields[name].base128_encode_to(writer, header)
+      def write_header_to(writer, field)
+        header = self.class.field_tags[field.name] << 3
+        header |= field.wire_type
+        field.base128_encode_to(writer, header)
       end
       
       def read_header_from(reader)
         header = Rubybuf::WireType::Varint.read_wiretype_data(reader)
-        tag = header << 3
-        wite_type = header & 0x111
+        tag = header >> 3
+        wite_type = header & 0x07
         name = self.class.field_tags.index(tag)
-        raise ::StandardError, "class #{self.class.name} field tag #{tag} not found" unless self.class.fields[name]
+        raise ::StandardError, "class #{self.class.name} field tag #{tag} not found. Name: #{name}" unless self.class.fields[name]
         field = self.class.fields[name]
-        raise ::StandardError, "class #{self.class.name}. Discrepancy of wire types" unless field.wire_type == wite_type
+        raise ::StandardError, "class #{self.class.name}. Discrepancy of wire types. Name: #{name}, Source: #{wite_type}, Exist: #{field.wire_type}" unless field.wire_type == wite_type
         field
       end
     end
