@@ -177,7 +177,7 @@ module Rubybuf
         include Rubybuf::WireType::LengthDelimited
         
         def write_to(writer, value)
-          value.pos = 0
+          value.rewind
           write_wiretype_data(writer, value.read)
         end
         
@@ -196,7 +196,6 @@ module Rubybuf
         def write_to(writer, value)
           data = StringIO.new
           value.write_to(data)
-          data.pos = 0
           write_wiretype_data(writer, data.read)
         end
         

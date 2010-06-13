@@ -67,7 +67,6 @@ describe Rubybuf::Message::Base do
 
         stream = StringIO.new
         message.write_to(stream)
-        stream.pos = 0
         
         message = Rubybuf::AllTypes.new
         message.read_from(stream)
@@ -89,7 +88,6 @@ describe Rubybuf::Message::Base do
       it "correctly writes values (with defaults) and reads their" do
         stream = StringIO.new
         @message.write_to(stream)
-        stream.pos = 0
         
         @message = Rubybuf::AllRules.new
         @message.read_from(stream)
@@ -101,7 +99,6 @@ describe Rubybuf::Message::Base do
         @message.name = "Andrey Lepeshkin"
         stream = StringIO.new
         @message.write_to(stream)
-        stream.pos = 0
         
         @message = Rubybuf::AllRules.new
         @message.read_from(stream)
@@ -127,7 +124,6 @@ describe Rubybuf::Message::Base do
         end
         stream = StringIO.new
         message.write_to(stream)
-        stream.rewind
         
         message = Rubybuf::NestedMessage.new
         message.read_from(stream)

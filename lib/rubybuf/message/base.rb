@@ -58,6 +58,7 @@ module Rubybuf
         self.class.fields.each do |name, field|
           write_field_to(writer, field)
         end
+        writer.rewind
       end
       
       def read_from(reader)
@@ -65,6 +66,7 @@ module Rubybuf
           read_field_from(reader)
         end
       rescue EOFError
+        reader.rewind
       end
 
       protected
