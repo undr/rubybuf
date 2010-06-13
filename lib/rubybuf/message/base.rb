@@ -49,6 +49,9 @@ module Rubybuf
         values.each do |name, value|
           set_value(name, value)
         end
+        if block_given?
+          yield self
+        end
       end
       
       def write_to(writer)
