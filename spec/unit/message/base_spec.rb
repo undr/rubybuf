@@ -1,6 +1,7 @@
 require "spec_helper"
 require "messages/all_types"
 require "messages/all_rules"
+require "messages/nested_message"
 
 describe Rubybuf::Message::Base do
   [:required, :optional, :repeated].each do |method|
@@ -107,6 +108,39 @@ describe Rubybuf::Message::Base do
         @message.id.should == 12
         @message.name.should == "Andrey Lepeshkin"
         @message.statuses.should include(:holy, :highest, :aggressive, :sufferer)
+      end
+    end
+    context "in nested messages" do
+      it "correctly writes nested messages and reads their" do
+        
+        ch1 =  Rubybuf::AllRules.new(:id => 12, :statuses => [:holy, :sufferer])
+        ch2 =  Rubybuf::AllRules.new(:id => 13, :statuses => [:holy, :aggressive])
+        ch3 =  Rubybuf::AllRules.new(:id => 14, :statuses => [:damned, :lowest])
+        ch4 =  Rubybuf::AllRules.new(:id => 15, :statuses => [:damned, :aggressive])
+        
+        message = Rubybuf::NestedMessage.new do |m|
+          m.id = 300000
+          m.child << ch1
+          m.child << ch2
+          m.child << ch3
+          m.child << ch4
+        end
+        stream = StringIO.new
+        message.write_to(stream)
+        stream.rewind
+        
+        message = Rubybuf::NestedMessage.new
+        message.read_from(stream)
+        message.id.should == 300000
+        message.child.should have(4).messages
+        message.child[0].id.should == 12
+        message.child[0].statuses.should include(:holy, :sufferer)
+        message.child[1].id.should == 13
+        message.child[1].statuses.should include(:holy, :aggressive)
+        message.child[2].id.should == 14
+        message.child[2].statuses.should include(:damned, :lowest)
+        message.child[3].id.should == 15
+        message.child[3].statuses.should include(:damned, :aggressive)
       end
     end
   end

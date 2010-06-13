@@ -1,7 +1,7 @@
 module Rubybuf
   module Message
     module Field
-      TYPES = [:int, :sint, :string, :uint, :bool, :enum, :bytes].freeze
+      TYPES = [:int, :sint, :string, :uint, :bool, :enum, :bytes, :message].freeze
       
       WIRETYPE_VARINT = 0;
       WIRETYPE_FIXED64 = 1;
@@ -188,6 +188,28 @@ module Rubybuf
         protected
         def valid_value_type_impl?(value)
           value.is_a?(StringIO)
+        end
+      end
+      class Message < Base
+        include Rubybuf::WireType::LengthDelimited
+        
+        def write_to(writer, value)
+          data = StringIO.new
+          value.write_to(data)
+          data.pos = 0
+          write_wiretype_data(writer, data.read)
+        end
+        
+        def read_from(reader)
+         data = StringIO.new(read_wiretype_data(reader).to_s)
+         message = @options[:class].new
+         message.read_from(data)
+         message
+        end
+        
+        protected
+        def valid_value_type_impl?(value)
+          value.is_a?(::Rubybuf::Message::Base)
         end
       end
     end
