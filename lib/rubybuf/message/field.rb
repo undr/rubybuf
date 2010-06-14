@@ -1,7 +1,7 @@
 module Rubybuf
   module Message
     module Field
-      TYPES = [:int, :sint, :string, :uint, :bool, :enum, :bytes, :message].freeze
+      TYPES = [:int, :sint, :string, :uint, :fixed32, :sfixed32, :fixed64, :sfixed64, :bool, :enum, :bytes, :message].freeze
       
       WIRETYPE_VARINT = 0;
       WIRETYPE_FIXED64 = 1;
@@ -9,6 +9,13 @@ module Rubybuf
       WIRETYPE_START_GROUP = 3;
       WIRETYPE_END_GROUP = 4;
       WIRETYPE_FIXED32 = 5;
+      
+      INT32_MAX = 2**31 - 1
+      INT32_MIN = -2**31
+      INT64_MAX = 2**63 - 1
+      INT64_MIN = -2**63
+      UINT32_MAX = 2**32 - 1
+      UINT64_MAX = 2**64 - 1
       
       def self.build(rule, type, name, tag, options = {})
         raise StandardError, 'Unknown field type' unless TYPES.include?(type)
@@ -85,23 +92,6 @@ module Rubybuf
         end
       end
 
-      class String < Base
-        include Rubybuf::WireType::LengthDelimited
-
-        def write_to(writer, value)
-          write_wiretype_data(writer, value)
-        end
-        
-        def read_from(reader)
-          read_wiretype_data(reader).to_s
-        end
-        
-        protected
-        def valid_value_type_impl?(value)
-          value.is_a?(::String)
-        end
-      end
-
       class Uint < Base
         include Rubybuf::WireType::Varint
         
@@ -116,6 +106,76 @@ module Rubybuf
         protected
         def valid_value_type_impl?(value)
           value.is_a?(::Integer) && value >= 0
+        end
+      end
+      
+      class Fixed32 < Base
+ 
+        def write_to(writer, value)
+          writer.write([value].pack('V'))
+        end
+        
+        def read_from(reader)
+          reader.read(4).unpack("V")[0]
+        end
+        
+        protected
+        def valid_value_type_impl?(value)
+          value.is_a?(::Integer) && value >= 0 && value <= ::Rubybuf::Message::Field::UINT32_MAX
+        end
+      end
+
+      class Sfixed32 < Base
+ 
+        def write_to(writer, value)
+          writer.write([value].pack('V'))
+        end
+        
+        def read_from(reader)
+          value = reader.read(4).unpack("V")[0]
+          value -= 0x1_0000_0000 if (value & 0x8000_0000).nonzero?
+          value
+        end
+        
+        protected
+        def valid_value_type_impl?(value)
+          value.is_a?(::Integer) && value >= ::Rubybuf::Message::Field::INT32_MIN && value <= ::Rubybuf::Message::Field::INT32_MAX
+        end
+      end
+      
+      class Fixed64 < Base
+ 
+        def write_to(writer, value)
+          writer.write([value & 0xffff_ffff, value >> 32].pack('VV'))
+        end
+        
+        def read_from(reader)
+          value = reader.read(8).unpack("VV")
+          value[0] + (value[1] << 32)
+        end
+        
+        protected
+        def valid_value_type_impl?(value)
+          value.is_a?(::Integer) && value >= 0 && value <= ::Rubybuf::Message::Field::UINT64_MAX
+        end
+      end
+
+      class Sfixed64 < Base
+ 
+        def write_to(writer, value)
+          writer.write([value & 0xffff_ffff, value >> 32].pack('VV'))
+        end
+        
+        def read_from(reader)
+          value = reader.read(8).unpack("VV")
+          value = value[0] + (value[1] << 32)
+          value -= 0x1_0000_0000_0000_0000 if (value & 0x8000_0000_0000_0000).nonzero?
+          value
+        end
+        
+        protected
+        def valid_value_type_impl?(value)
+          value.is_a?(::Integer) && value >= ::Rubybuf::Message::Field::INT64_MIN && value <= ::Rubybuf::Message::Field::INT64_MAX
         end
       end
 
@@ -173,6 +233,23 @@ module Rubybuf
         end
       end
 
+      class String < Base
+        include Rubybuf::WireType::LengthDelimited
+
+        def write_to(writer, value)
+          write_wiretype_data(writer, value)
+        end
+        
+        def read_from(reader)
+          read_wiretype_data(reader).to_s
+        end
+        
+        protected
+        def valid_value_type_impl?(value)
+          value.is_a?(::String)
+        end
+      end
+      
       class Bytes < Base
         include Rubybuf::WireType::LengthDelimited
         

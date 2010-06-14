@@ -6,7 +6,7 @@ describe Rubybuf::Message::Field::Uint do
   end
   context ".valid_value_type?" do
     it "returns true if value is valid" do
-      [12, 120].each do |value|
+      [12, 120, 0].each do |value|
         @field.valid_value_type?(value).should == true
       end
     end
