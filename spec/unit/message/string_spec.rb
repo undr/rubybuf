@@ -6,6 +6,10 @@ describe Rubybuf::Message::Field::String do
     @long_string = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent sagittis tincidunt nibh et mattis. Mauris commodo semper elit, in viverra mauris dictum et. Nam dignissim euismod cursus. Sed non justo a urna adipiscing posuere id vel massa. Duis tincidunt magna vitae augue hendrerit facilisis. Sed vehicula mauris vitae justo blandit auctor. Nulla sit amet cursus libero. Morbi massa nulla, ornare in ultrices et, posuere sit amet magna. Aenean augue eros, tempus sed suscipit id, luctus eget urna. Pellentesque et lorem ornare urna aliquam auctor. Suspendisse non tincidunt elit. Nunc quis odio tincidunt augue sagittis ullamcorper ut imperdiet turpis. In non turpis in quam consequat volutpat vitae sed libero. Aliquam dapibus sollicitudin fermentum. Aliquam cursus posuere mauris tincidunt condimentum. Aenean pharetra ultricies tempus."
     @long_string_length = @long_string.length
   end
+  it "contains method #wire_type which returns Rubybuf::Message::Field::WIRETYPE_LENGTH_DELIMITED" do
+    @field.should respond_to(:wire_type)
+    @field.wire_type.should == Rubybuf::Message::Field::WIRETYPE_LENGTH_DELIMITED
+  end
   context ".valid_value_type?" do
     it "returns true if value is valid string" do
       @field.valid_value_type?("string").should == true

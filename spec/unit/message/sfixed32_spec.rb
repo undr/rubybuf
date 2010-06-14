@@ -4,6 +4,10 @@ describe Rubybuf::Message::Field::Sfixed32 do
   before(:each) do
     @field = Rubybuf::Message::Field::Sfixed32.new(:required, :balance, 1, {})
   end
+  it "contains method #wire_type which returns Rubybuf::Message::Field::WIRETYPE_FIXED32" do
+    @field.should respond_to(:wire_type)
+    @field.wire_type.should == Rubybuf::Message::Field::WIRETYPE_FIXED32
+  end
   context ".valid_value_type?" do
     it "returns true if value is valid" do
       [-12, 12, Rubybuf::Message::Field::INT32_MAX, Rubybuf::Message::Field::INT32_MIN, 0].each do |value|

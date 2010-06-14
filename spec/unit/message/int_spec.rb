@@ -4,6 +4,10 @@ describe Rubybuf::Message::Field::Int do
   before(:each) do
     @field = Rubybuf::Message::Field::Int.new(:required, :balance, 1, {})
   end
+  it "contains method #wire_type which returns Rubybuf::Message::Field::WIRETYPE_VARINT" do
+    @field.should respond_to(:wire_type)
+    @field.wire_type.should == Rubybuf::Message::Field::WIRETYPE_VARINT
+  end
   context ".valid_value_type?" do
     it "returns true if value is valid" do
       [-12, 12, 0].each do |value|

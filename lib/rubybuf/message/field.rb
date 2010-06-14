@@ -119,6 +119,10 @@ module Rubybuf
           reader.read(4).unpack("V")[0]
         end
         
+        def wire_type
+          Rubybuf::Message::Field::WIRETYPE_FIXED32
+        end
+        
         protected
         def valid_value_type_impl?(value)
           value.is_a?(::Integer) && value >= 0 && value <= ::Rubybuf::Message::Field::UINT32_MAX
@@ -135,6 +139,10 @@ module Rubybuf
           value = reader.read(4).unpack("V")[0]
           value -= 0x1_0000_0000 if (value & 0x8000_0000).nonzero?
           value
+        end
+        
+        def wire_type
+          Rubybuf::Message::Field::WIRETYPE_FIXED32
         end
         
         protected
@@ -154,6 +162,10 @@ module Rubybuf
           value[0] + (value[1] << 32)
         end
         
+        def wire_type
+          Rubybuf::Message::Field::WIRETYPE_FIXED64
+        end
+        
         protected
         def valid_value_type_impl?(value)
           value.is_a?(::Integer) && value >= 0 && value <= ::Rubybuf::Message::Field::UINT64_MAX
@@ -171,6 +183,10 @@ module Rubybuf
           value = value[0] + (value[1] << 32)
           value -= 0x1_0000_0000_0000_0000 if (value & 0x8000_0000_0000_0000).nonzero?
           value
+        end
+        
+        def wire_type
+          Rubybuf::Message::Field::WIRETYPE_FIXED64
         end
         
         protected

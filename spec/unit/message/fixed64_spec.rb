@@ -4,6 +4,10 @@ describe Rubybuf::Message::Field::Fixed64 do
   before(:each) do
     @field = Rubybuf::Message::Field::Fixed64.new(:required, :balance, 1, {})
   end
+  it "contains method #wire_type which returns Rubybuf::Message::Field::WIRETYPE_FIXED64" do
+    @field.should respond_to(:wire_type)
+    @field.wire_type.should == Rubybuf::Message::Field::WIRETYPE_FIXED64
+  end
   context ".valid_value_type?" do
     it "returns true if value is valid" do
       [12, 150, Rubybuf::Message::Field::UINT64_MAX, 0].each do |value|
