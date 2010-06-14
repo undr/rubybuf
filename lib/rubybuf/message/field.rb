@@ -1,7 +1,7 @@
 module Rubybuf
   module Message
     module Field
-      TYPES = [:int, :sint, :string, :uint, :fixed32, :sfixed32, :fixed64, :sfixed64, :bool, :enum, :bytes, :message].freeze
+      TYPES = [:int, :sint, :uint, :fixed32, :sfixed32, :float, :fixed64, :sfixed64, :double, :bool, :enum, :string, :bytes, :message].freeze
       
       WIRETYPE_VARINT = 0;
       WIRETYPE_FIXED64 = 1;
@@ -110,17 +110,14 @@ module Rubybuf
       end
       
       class Fixed32 < Base
- 
+        include Rubybuf::WireType::Fixed32
+        
         def write_to(writer, value)
-          writer.write([value].pack('V'))
+          write_wiretype_data(writer, value)
         end
         
         def read_from(reader)
-          reader.read(4).unpack("V")[0]
-        end
-        
-        def wire_type
-          Rubybuf::Message::Field::WIRETYPE_FIXED32
+          read_wiretype_data(reader)
         end
         
         protected
@@ -130,42 +127,52 @@ module Rubybuf
       end
 
       class Sfixed32 < Base
- 
+        include Rubybuf::WireType::Fixed32
+        
         def write_to(writer, value)
-          writer.write([value].pack('V'))
+          write_wiretype_data(writer, value)
         end
         
         def read_from(reader)
-          value = reader.read(4).unpack("V")[0]
+          value = read_wiretype_data(reader)
           value -= 0x1_0000_0000 if (value & 0x8000_0000).nonzero?
           value
         end
-        
-        def wire_type
-          Rubybuf::Message::Field::WIRETYPE_FIXED32
-        end
-        
+
         protected
         def valid_value_type_impl?(value)
           value.is_a?(::Integer) && value >= ::Rubybuf::Message::Field::INT32_MIN && value <= ::Rubybuf::Message::Field::INT32_MAX
         end
       end
       
-      class Fixed64 < Base
- 
+      class Float < Base
+        include Rubybuf::WireType::Fixed32
+        
         def write_to(writer, value)
-          writer.write([value & 0xffff_ffff, value >> 32].pack('VV'))
+          writer.write([value].pack("e"))
         end
         
         def read_from(reader)
-          value = reader.read(8).unpack("VV")
-          value[0] + (value[1] << 32)
+          reader.read(4).unpack("e").first
+        end
+
+        protected
+        def valid_value_type_impl?(value)
+          value.is_a?(::Numeric)
+        end
+      end      
+      
+      class Fixed64 < Base
+        include Rubybuf::WireType::Fixed64
+        
+        def write_to(writer, value)
+          write_wiretype_data(writer, value)
         end
         
-        def wire_type
-          Rubybuf::Message::Field::WIRETYPE_FIXED64
+        def read_from(reader)
+          read_wiretype_data(reader)
         end
-        
+
         protected
         def valid_value_type_impl?(value)
           value.is_a?(::Integer) && value >= 0 && value <= ::Rubybuf::Message::Field::UINT64_MAX
@@ -173,20 +180,16 @@ module Rubybuf
       end
 
       class Sfixed64 < Base
- 
+        include Rubybuf::WireType::Fixed64
+        
         def write_to(writer, value)
-          writer.write([value & 0xffff_ffff, value >> 32].pack('VV'))
+          write_wiretype_data(writer, value)
         end
         
         def read_from(reader)
-          value = reader.read(8).unpack("VV")
-          value = value[0] + (value[1] << 32)
+          value = read_wiretype_data(reader)
           value -= 0x1_0000_0000_0000_0000 if (value & 0x8000_0000_0000_0000).nonzero?
           value
-        end
-        
-        def wire_type
-          Rubybuf::Message::Field::WIRETYPE_FIXED64
         end
         
         protected
@@ -194,7 +197,24 @@ module Rubybuf
           value.is_a?(::Integer) && value >= ::Rubybuf::Message::Field::INT64_MIN && value <= ::Rubybuf::Message::Field::INT64_MAX
         end
       end
+      
+      class Double < Base
+        include Rubybuf::WireType::Fixed64
+        
+        def write_to(writer, value)
+          writer.write([value].pack("E"))
+        end
+        
+        def read_from(reader)
+          reader.read(8).unpack("E").first
+        end
 
+        protected
+        def valid_value_type_impl?(value)
+          value.is_a?(::Numeric)
+        end
+      end
+      
       class Bool < Base
         include Rubybuf::WireType::Varint
         
