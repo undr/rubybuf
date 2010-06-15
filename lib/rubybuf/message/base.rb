@@ -44,8 +44,7 @@ module Rubybuf
       end
       
       def initialize(values = {})
-        @values = {}
-        set_default_values
+        clear!
         values.each do |name, value|
           set_value(name, value)
         end
@@ -60,6 +59,7 @@ module Rubybuf
       
       def clear!
         @values = {}
+        set_default_values
       end
       
       def write_to(writer)
