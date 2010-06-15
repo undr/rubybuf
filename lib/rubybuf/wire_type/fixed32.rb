@@ -1,7 +1,6 @@
 module Rubybuf
   module WireType
     module Fixed32
-      module_function
       def write_wiretype_data(writer, value)
         writer.write([value].pack('V'))
       end
@@ -13,7 +12,6 @@ module Rubybuf
       def wire_type
         Rubybuf::Message::Field::WIRETYPE_FIXED32
       end
-      public :wire_type, :read_wiretype_data, :write_wiretype_data
     end
   end
 end

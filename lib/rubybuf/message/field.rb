@@ -72,6 +72,7 @@ module Rubybuf
         def read_from(reader)
           read_wiretype_data(reader).to_i
         end
+        
         protected
         def valid_value_type_impl?(value)
           value.is_a?(::Integer)

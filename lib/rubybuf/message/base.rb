@@ -1,6 +1,7 @@
 module Rubybuf
   module Message
     class Base
+      include Rubybuf::Base128
       class << self
         def required(name, type, tag, options = {})
           define_field(:required, type, name, tag, options)
@@ -140,11 +141,11 @@ module Rubybuf
       def write_header_to(writer, field)
         header = field_tags[field.name] << 3
         header |= field.wire_type
-        field.base128_encode_to(writer, header)
+        base128_encode_to(writer, header)
       end
       
       def read_header_from(reader)
-        header = Rubybuf::WireType::Varint.read_wiretype_data(reader)
+        header = base128_decode_from(reader)
         tag = header >> 3
         wite_type = header & 0x07
         name = field_tags.index(tag)

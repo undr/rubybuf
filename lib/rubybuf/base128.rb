@@ -1,6 +1,5 @@
 module Rubybuf
   module Base128
-    module_function
     def base128_encode(value)
       raise ::ArgumentError, "value must by type of Integer" unless value.is_a?(Integer)
       raise ::RangeError, "#{value} is negative" if value < 0
@@ -41,6 +40,5 @@ module Rubybuf
       end
       value
     end
-    public :base128_decode_from, :base128_decode, :base128_encode_to, :base128_encode
   end
 end
