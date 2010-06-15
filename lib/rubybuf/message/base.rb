@@ -72,10 +72,7 @@ module Rubybuf
       protected
       def set_default_values
         self.class.fields.each do |field_name, field|
-          #field = self.class.fields[field_name]
-          @values[field_name] = if field.rule == :required
-            nil
-          elsif field.rule == :optional
+          @values[field_name] = if field.rule == :required || field.rule == :optional
             field.options[:default] ? field.options[:default] : nil
           elsif field.rule == :repeated
             []
