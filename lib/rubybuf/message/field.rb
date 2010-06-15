@@ -28,10 +28,13 @@ module Rubybuf
         include Rubybuf::Base128
         include Rubybuf::ZigZag
         def initialize(rule, name, tag, options)
-          @rule = rule
-          @name = name
-          @tag = tag
-          @options = options
+          @rule = rule.freeze
+          @name = name.freeze
+          @tag = tag.freeze
+          @options = options.freeze
+          if @options[:default]
+            raise ::StandardError, "" unless valid_value_type?(@options[:default])
+          end
         end
 
         def valid_value_type?(value)

@@ -54,8 +54,16 @@ module Rubybuf
         end
       end
       
+      def field_exists?(name)
+        self.class.field_exists?(name)
+      end
+      
+      def clear!
+        @values = {}
+      end
+      
       def write_to(writer)
-        self.class.fields.each do |name, field|
+        fields.each do |name, field|
           write_field_to(writer, field)
         end
         writer.rewind
@@ -71,7 +79,7 @@ module Rubybuf
 
       protected
       def set_default_values
-        self.class.fields.each do |field_name, field|
+        fields.each do |field_name, field|
           value = if field.rule == :required || field.rule == :optional
             field.options[:default] ? field.options[:default] : nil
           elsif field.rule == :repeated
@@ -79,6 +87,18 @@ module Rubybuf
           end
           set_value(field_name, value)
         end
+      end
+      
+      def fields
+        self.class.fields
+      end
+      
+      def field(name)
+        return self.class.fields[name] if field_exists?(name)
+        nil
+      end
+      def field_tags
+        self.class.field_tags
       end
       def write_field_to(writer, field)
         value = @values[field.name]
@@ -114,11 +134,11 @@ module Rubybuf
       end
   
       def set_value(name, value)
-        @values[name] = value if self.class.field_exists?(name) && self.class.fields[name].valid_value_type?(value)
+        @values[name] = value if field_exists?(name) && field(name).valid_value_type?(value)
       end
       
       def write_header_to(writer, field)
-        header = self.class.field_tags[field.name] << 3
+        header = field_tags[field.name] << 3
         header |= field.wire_type
         field.base128_encode_to(writer, header)
       end
@@ -127,9 +147,9 @@ module Rubybuf
         header = Rubybuf::WireType::Varint.read_wiretype_data(reader)
         tag = header >> 3
         wite_type = header & 0x07
-        name = self.class.field_tags.index(tag)
-        raise ::StandardError, "class #{self.class.name} field tag #{tag} not found. Name: #{name}" unless self.class.fields[name]
-        field = self.class.fields[name]
+        name = field_tags.index(tag)
+        raise ::StandardError, "class #{self.class.name} field tag #{tag} not found. Name: #{name}" unless field_exists?(name)
+        field = field(name)
         raise ::StandardError, "class #{self.class.name}. Discrepancy of wire types. Name: #{name}, Source: #{wite_type}, Exist: #{field.wire_type}" unless field.wire_type == wite_type
         field
       end
