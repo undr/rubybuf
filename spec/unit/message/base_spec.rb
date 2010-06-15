@@ -2,6 +2,7 @@ require "spec_helper"
 require "messages/all_types"
 require "messages/all_rules"
 require "messages/nested_message"
+require "messages/with_default_values"
 
 describe Rubybuf::Message::Base do
   [:required, :optional, :repeated].each do |method|
@@ -50,6 +51,56 @@ describe Rubybuf::Message::Base do
           @klass.send(method, :id, :int, 1)
           lambda { @klass.send(method, :id, :string, 2) }.should raise_error(::StandardError)
         end
+      end
+    end
+  end
+  describe ".clear!" do
+    context "without default values" do
+      it "clears values of message" do
+        message = Rubybuf::AllTypes.new do |m|
+          m.id = 12
+          m.balance = -1000
+          m.price = 1000
+          m.is_admin = true
+          m.status =  :inactive
+          m.name = "Andrey Lepeshkin"
+        end
+        message.id.should == 12
+        message.balance.should == -1000
+        message.price.should == 1000
+        message.is_admin.should == true
+        message.status.should == :inactive
+        message.name.should == "Andrey Lepeshkin"   
+
+        message.clear!
+
+        message.id.should == nil
+        message.balance.should == nil
+        message.price.should == nil
+        message.is_admin.should == nil
+        message.status.should == nil
+        message.name.should == nil  
+      end
+    end
+    context "with default values" do
+      it "clears values of message and sets default values" do
+        message = Rubybuf::WithDefaultValues.new do |m|
+          m.id = 12
+          m.name = "Undr"
+          m.gender = :male
+          m.statuses = [:positive, :holy]
+        end
+        message.id.should == 12
+        message.gender.should == :male
+        message.name.should == "Undr"
+        message.statuses.should == [:positive, :holy]  
+
+        message.clear!
+
+        message.id.should == nil
+        message.gender.should == :neuter
+        message.name.should == "Unnamed"
+        message.statuses.should == [:holy, :highest, :positive] 
       end
     end
   end
