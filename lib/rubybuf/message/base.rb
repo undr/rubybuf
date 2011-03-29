@@ -77,7 +77,7 @@ module Rubybuf
       rescue EOFError
         reader.rewind
       end
-
+      
       protected
       def set_default_values
         fields.each do |field_name, field|

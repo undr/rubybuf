@@ -290,6 +290,10 @@ module Rubybuf
         end
       end
       
+      class Bytes < String
+      end
+      
+=begin      
       class Bytes < Base
         include Rubybuf::WireType::LengthDelimited
         
@@ -307,6 +311,8 @@ module Rubybuf
           value.is_a?(StringIO)
         end
       end
+=end
+
       class Message < Base
         include Rubybuf::WireType::LengthDelimited
         
